@@ -110,7 +110,8 @@ def calc_baseline_energy_wrapper(matrix_sizes, p, factors, mem, num_levels, J_s=
     c = 0
     for size in matrix_sizes:
         n = 2 ** size
-        e = calc_energy(num_levels[c], n, p, mem, factors)
+        addition_factor = 50 * n * n * n
+        e = calc_energy(num_levels[c], n, p, mem, factors, addition_factor=addition_factor)
         energy.append(e)
         c = c + 1
     return energy
@@ -153,9 +154,10 @@ def calc_energy_wrapper(matrix_size, p, factors, mem, num_levels, J_s=0, J_w=1, 
 def baseline_params_energy_calc():
     matrix_sizes = [20]
     #matrix_sizes = [8, 10, 12, 14, 16, 18, 20, 22]
-    p = [256, 4096]
+    p = [4096, 4096]
     factors = [25000, 250000]
-    mem = [128000000, 32768000000]
+    #mem = [128000000, 32768000000]
+    mem = [16777216, 68719476736]
     J_s = 0
     J_w = 1
     a = 4
@@ -196,9 +198,9 @@ def new_sys_params_energy_calc():
                [8 for i in range(4)]]
     m_vals = [2000, 16000, 64000]
     factors = [1, 100, 10000, 100000]   
-    m1 = [2000]
-    m2 = [16000]
-    m3 = [64000]
+    m1 = [2048]
+    m2 = [16384]
+    m3 = [65536]
 
     for i in range(1, 4):
         m1.append(m1[i - 1] * 4096)

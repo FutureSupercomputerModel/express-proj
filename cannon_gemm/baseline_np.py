@@ -107,12 +107,21 @@ def calc_baseline_energy_wrapper(matrix_sizes, p, factors, mem, num_levels, J_s=
     '''
     energy = []
     c = 0
-    for size in matrix_sizes:
-        n = 2 ** size
-        e = calc_energy(num_levels[c], n, p, mem, factors)
+    for i in range(len(matrix_sizes)):
+        n = 2 ** matrix_sizes[i]
+        # addition_factor = 50 * n * n * n
+        add_factor = addition_factor[i] if addition_factor != 0 else 0
+        e = calc_energy(num_levels[c], n, p, mem, factors, addition_factor=add_factor)
         energy.append(e)
         c = c + 1
     return energy
+    # for size in matrix_sizes:
+    #     n = 2 ** size
+    #     addition_factor = 50 * n * n * n
+    #     e = calc_energy(num_levels[c], n, p, mem, factors, addition_factor=addition_factor)
+    #     energy.append(e)
+    #     c = c + 1
+    # return energy
     
 # def calc_energy_wrapper(matrix_sizes, plot_n, p, factors, mem, J_s=0, J_w=1, a=4, addition_factor=0):
 #     '''
@@ -136,17 +145,20 @@ def calc_baseline_energy_wrapper(matrix_sizes, p, factors, mem, num_levels, J_s=
 def baseline_params_energy_calc():
     matrix_sizes = [8, 10, 12, 14, 16, 18, 20, 22]
     #matrix_sizes = [8, 10, 12, 14, 16, 18, 20, 22]
-    p = [256, 4096]
+    p = [4096, 4096]
     factors = [25000, 250000]
-    mem = [128000000, 32768000000]
+    #mem = [128000000, 32768000000]
+    mem = [16777216, 68719476736]
     J_s = 0
     J_w = 1
     a = 4
     num_levels = [0 for _ in range(len(matrix_sizes))]
     i = 0
+    addition_factor = []
     for size in matrix_sizes:
 
         n = 2 ** size
+        addition_factor.append(50 * n * n * n)
         #print("N:", n)
         flag = False
         l = 0
@@ -164,7 +176,7 @@ def baseline_params_energy_calc():
         except IndexError:
             num_levels[i] = -1
     # print("num_levels: ", num_levels)
-    baseline_energy = calc_baseline_energy_wrapper(matrix_sizes, p, factors, mem, num_levels)
+    baseline_energy = calc_baseline_energy_wrapper(matrix_sizes, p, factors, mem, num_levels, addition_factor=addition_factor)
     assert len(baseline_energy) == len(matrix_sizes)
     return baseline_energy
 
@@ -179,9 +191,9 @@ def new_sys_params_energy_calc():
                [16 for i in range(4)],
                [8 for i in range(4)]]
     factors = [1, 100, 10000, 100000]   
-    m1 = [2000]
-    m2 = [16000]
-    m3 = [64000]
+    m1 = [2048]
+    m2 = [16384]
+    m3 = [65536]
 
     for i in range(1, 4):
         m1.append(m1[i - 1] * 4096)
@@ -230,6 +242,7 @@ def new_sys_params_energy_calc():
 
 baseline_energy = baseline_params_energy_calc() #list
 new_sys_energy = new_sys_params_energy_calc() # list of list
+# print(new_sys_energy)
 energy_saving_factor = []
 
 # max_energy = 0
