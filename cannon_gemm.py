@@ -22,18 +22,16 @@ class cannon_gemm:
     def dram_energy(self, n, factors, a):
         dram_energy = 0
         for i in range(len(factors)):
-            dram_energy += 2 * 4 * a * n * n * factors[i] # 2 -> pJ, 4 -> num of read and write
+            dram_energy += 2 * 4 * a * n * n * factors[i] # 2 -> pJ (accessing RAM is 2x more expensive), 4 -> num of read and write
         return dram_energy * 0
     
     def level_condition(self, a, n, m, p, l):
-        return 3 * a * n * n > m[l] * p[l]
+        return 3 * a * n * n > m[l] * p[l] # Does matrix fit in the memory of all the processors
     
     def transfer_energy(self, n, b, factor):
-        #print(n)
-        #print(b)
-        #print(factor)
-        return (n * n * (2 * b + 1) * factor) / 4
+        return (n * n * b * (2 * math.sqrt(b) + 1) * factor) / 4 # For IMEC, the tranfer energy from HBM to 8100
     
     def l4_energy(self, n, b, factor_comm, factor_comp):
-        print(n)
-        return ((((n * n * 2 * b + n * n) * factor_comm) / 4) + 2 * n * n * factor_comp) # 4 is for BFlop
+        comm_energy = (((n * n * b * (2 * math.sqrt(b) + 1)) * factor_comm) / 4) # Tranfer energy from 8100 to 200 MAC, 4 in denominator is for BFlop
+        comp_energy = 2 * n * n * n * factor_comp # Flops energy
+        return comm_energy + comp_energy
