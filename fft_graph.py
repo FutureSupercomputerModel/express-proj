@@ -25,10 +25,10 @@ class fft_graph:
             return (J_s + J_w * factors[i] * a * (n) * math.sqrt(p[i])) + self.new_sys_energy(i - 1, (n/p[i]), p, m, factors, addition_factor=addition_factor) * p[i] 
     
     def level_condition(self, a, n, m, p, l):
-        return 2 * a * n > m[l] * p[l]
+        return 2 * a * n > m[l] * p[l] # Does array fit in the memory of all the processors
     
     def dram_energy(self, n, factors, a):
         dram_energy = 0
         for i in range(3):
-            dram_energy += 2 * 2 * a * n * factors[i] # 2 -> pJ, 2 -> num of read and write
+            dram_energy += 2 * 2 * a * n * factors[i] # 2 -> pJ (accessing RAM is 2x more expensive), 2 -> num of read and write
         return dram_energy

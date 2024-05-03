@@ -4,7 +4,7 @@ import cannon_gemm
 import numpy as np
 from operator import add
 
-def baseline_calc_energy_wrapper(func, matrix_sizes, p=None, a=None, f1=None, f2=None):
+def baseline_energy_calc_func(func, matrix_sizes, p=None, a=None, f1=None, f2=None):
     baseline_energy = []
     for size in matrix_sizes:
         energy = func.baseline_energy(size, p, a, f1, f2)
@@ -16,12 +16,12 @@ def get_baseline_energy_calc(func, matrix_sizes, p_sizes, mem, a=None, f1=None, 
     for m_val in mem:
         bp_energy = []
         for p in p_sizes:
-            energy = baseline_calc_energy_wrapper(func, matrix_sizes, p, a, f1, f2)
+            energy = baseline_energy_calc_func(func, matrix_sizes, p, a, f1, f2)
             bp_energy.append(energy)
         baseline_energy.append(bp_energy)
     return baseline_energy
     
-def calc_energy_wrapper(func, matrix_sizes, p, factors, mem, num_levels, J_s=0, J_w=1, a=8, addition_factor=0):
+def new_sys_energy_calc_func(func, matrix_sizes, p, factors, mem, num_levels, J_s=0, J_w=1, a=8, addition_factor=0):
     '''
     matrix_sizes: list
     plot_n: list
@@ -39,14 +39,12 @@ def calc_energy_wrapper(func, matrix_sizes, p, factors, mem, num_levels, J_s=0, 
 
 def get_new_sys_energy_calc(func, matrix_sizes, p_sizes, factors, mem, J_s=0, J_w=1, a=8, debug=False):
     new_sys_energy = []
-    #baseline_energy = []
     all_num_levels = []
     for m_val in mem:
         if(debug):
             print("M:",m_val)
         np_level = []
         np_energy = []
-        #bp_energy = []
         for p in p_sizes:
             num_levels = [0 for _ in range(len(matrix_sizes))]
             if(debug):
@@ -66,7 +64,6 @@ def get_new_sys_energy_calc(func, matrix_sizes, p_sizes, factors, mem, J_s=0, J_
                 try:
                     while(not flag):
                         if(func.level_condition(a, n, m, p, l)):
-                        #if(3 * a * n > m[l] * p[l]):
                             l = l + 1
                             flag = False
                         else:
@@ -78,18 +75,15 @@ def get_new_sys_energy_calc(func, matrix_sizes, p_sizes, factors, mem, J_s=0, J_
                     i = i + 1
             if(debug):
                 print("num_levels: ", num_levels)
-            #b_energy = baseline_params_energy_calc(matrix_sizes, p, a)
-            energy = calc_energy_wrapper(func, matrix_sizes, p, factors, m, num_levels)
+            energy = new_sys_energy_calc_func(func, matrix_sizes, p, factors, m, num_levels)
             assert len(energy) == len(matrix_sizes)
             np_level.append(num_levels)
             np_energy.append(energy)
-            #bp_energy.append(b_energy)
         new_sys_energy.append(np_energy)
-        #baseline_energy.append(bp_energy)
         all_num_levels.append(np_level)
     return new_sys_energy, all_num_levels
 
-def dram_calc_energy_wrapper(func, matrix_sizes, factors, p=None, a=None):
+def dram_energy_calc_func(func, matrix_sizes, factors, p=None, a=None):
     dram_energy = []
     for size in matrix_sizes:
         energy = func.dram_energy(size, factors, a)
@@ -101,7 +95,7 @@ def get_dram_energy_calc(func, matrix_sizes, p_sizes, factors, mem, a=8, debug=F
     for m_val in mem:
         dp_energy = []
         for p in p_sizes:
-            energy = dram_calc_energy_wrapper(func, matrix_sizes, factors, p, a)
+            energy = dram_energy_calc_func(func, matrix_sizes, factors, p, a)
             dp_energy.append(energy)
         dram_energy.append(dp_energy)
     return dram_energy
@@ -133,13 +127,13 @@ def get_total_energy_imec(transfer_energy, cannon_energy, l4_energy):
             temp2 = []
             for k in range(len(cannon_energy[i][j])):
                 # print(i, j, k)
-                val = cannon_energy[i][j][k] + transfer_energy + l4_energy * 8100 # comm and comp cosr within MAC for each of 8100 processors
+                val = cannon_energy[i][j][k] + transfer_energy[k] + l4_energy[k] * 8100 # comm and comp cosr within MAC for each of 8100 processors
                 temp2.append(val)
             temp.append(temp2)
         res.append(temp)
     return res
 
-def get_energy_saving_factor(baseline_energy, new_sys_energy):
+def get_energy_saving_factor(baseline_energy, new_sys_energy, conversion_factor=0.064):
     energy_saving_factor = []
     max_energy_saving_factor = []
     print(len(new_sys_energy))
@@ -152,7 +146,7 @@ def get_energy_saving_factor(baseline_energy, new_sys_energy):
                 #print(i, j, k)
                 try:
                     #print("In energy factor")
-                    val = baseline_energy[i][j][k]/(new_sys_energy[i][j][k])
+                    val = baseline_energy[i][j][k]/(conversion_factor * new_sys_energy[i][j][k]) #if factor in fJ, need to convert to pJ
                     temp2.append(val)
                     m_energy = max(m_energy, val)
                 except ZeroDivisionError:

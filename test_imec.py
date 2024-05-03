@@ -25,7 +25,7 @@ def get_b_2(n, mac):
         return 1
     else:
         b = 1
-        while(n * n > mac * mac):
+        while(n * n > mac * mac): # Keep dividing each block into 4 sub-blocks until each sub-block fits into MAC
             b = b * 4
             n = n / 2
         return b
@@ -55,13 +55,13 @@ for n in matrix_sizes:
     b_0 = get_b_2(n_on_each_proc, p_sizes[0][0], mac)
     n_0 = n_on_each_proc / math.sqrt(b_0)
     # print(n, " ", b_1, " ", n_1_temp, " ", n_on_each_proc, " ", b_0, " ", n_0)
-    transfer_energy_temp = main.get_transfer_energy(cannonGemmGraph, n_1_temp, b_1, factor_1)
-    transfer_energy.append(transfer_energy_temp)
-    l4_energy_temp = main.get_l4_energy(cannonGemmGraph, n_0, b_0, factor_comm_0, factor_comp_0)
+    transfer_energy_temp = main.get_transfer_energy(cannonGemmGraph, n_1_temp, b_1, factor_1) # Energy from HBM to 8100
+    transfer_energy.append(transfer_energy_temp) 
+    l4_energy_temp = main.get_l4_energy(cannonGemmGraph, n_0, b_0, factor_comm_0, factor_comp_0) # Energy from 8100 to MAC + flops in MAC
     l4_energy.append(l4_energy_temp)
 
 
-new_sys_energy, num_levels = main.get_new_sys_energy_calc(cannonGemmGraph, n_1, p_sizes, factors, mem, a=8)
+new_sys_energy, num_levels = main.get_new_sys_energy_calc(cannonGemmGraph, n_1, p_sizes, factors, mem, a=8) # Cannon gemm energy in 8100
 # print(new_sys_energy)
 # print(transfer_energy)
 # print(l4_energy)
@@ -76,9 +76,7 @@ for i in range(len(num_levels)):
             if(num_levels[i][j][k] >= 0):
                 num_levels[i][j][k] = num_levels[i][j][k] + 1
 
-#plot_p = [4096, 256, 128, 64, 32, 16, 8]
 plot_p = [8100]
 for y_axis in range(len(energy_saving_factor)):
-    # title = f'm4 = {mem[y_axis]/1024} KB'
     title = f'm4 = {mem[y_axis]/(1024 * 1024)} MB'
     plot_graph.plot_heatmap_graph(matrix_sizes, plot_p, energy_saving_factor[y_axis], num_levels[y_axis], max_energy_saving_factor[y_axis], title)
